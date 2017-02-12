@@ -156,9 +156,7 @@ public class Robot extends IterativeRobot {
 	private static int IMG_HEIGHT = 240;
 	private VisionThread visionThread;
 	private final Object imgLock = new Object();
-	
 
-@Override
 	public void autonomousInit() {
 		
 	}
