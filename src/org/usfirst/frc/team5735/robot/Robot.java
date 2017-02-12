@@ -71,7 +71,12 @@ public class Robot extends IterativeRobot {
 		seekingPeg = false;
 		encoderDebug = false;
 		
+<<<<<<< HEAD
 		driveTrain = new RobotDrive(left1, left2, right1, right2);
+=======
+		//driveTrain = new RobotDrive(left1, left2, right1, right2);
+
+>>>>>>> Initial Commit
 		
 		shooterElevator = new CANTalon(1);
 		shooterElevator.set(0);
@@ -235,7 +240,11 @@ public class Robot extends IterativeRobot {
         		}
         	}
         	else{
+<<<<<<< HEAD
         		visionThread.start()
+=======
+        		visionThread.start();
+>>>>>>> Initial Commit
         		seekingPeg = true;
         	}
 //        		System.out.println("SeekingPeg: " + seekingPeg);
