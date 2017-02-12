@@ -24,83 +24,103 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.vision.VisionThread;
 
 public class Robot extends IterativeRobot {
+	/*
+	 * =============== ROBOT DRAWING ===============
+	 *    ______INTAKE______ 
+	 *   |                  |
+	 *  L|                  |R
+	 *  E|      SHOOTER     |I
+	 *  F|                  |G
+	 *  T|      CLIMBER     |H
+	 *   |                  |T
+	 *   |______ GEAR ______|
+	 */
 	
-	public static final int RIGHT_1_ID = 1, RIGHT_2_ID = 2, LEFT_1_ID = 3, LEFT_2_ID = 4;
-	public static final int SHOOTER_ELEVATOR_ID = 6, SHOOTER_FLYWHEEL_ID = 6;
-	public static final int PORT_DIO_ENCODER_RIGHT = 0, PORT_DIO_ENCODER_LEFT = 2;
+	//=============== Constants ===============
+	//Robot ports/CAN IDs
+	public static final int RIGHT_FRONT_ID = 1, RIGHT_REAR_ID = 2, LEFT_FRONT_ID = 3, LEFT_REAR_ID = 4; //Drivetrain CAN IDs
+	public static final int SHOOTER_ELEVATOR_ID = 5, SHOOTER_FLYWHEEL_ID = 6, INTAKE_ID = 7, CLIMBER_ID = 8; //Subsystem CAN IDs
+	public static final int ENCODER_RIGHT_ID = 0, ENCODER_LEFT_ID = 2; //Encoder DIO IDs
+	public static final int HELLO_KITTY_ID = 0; //Xbox Controller USB Ports
+	public static final int DRIVE_CONTROLLER_PORT = 0, SUBSYSTEM_CONTROLLER_PORT = 1; //Xbox Controller USB Ports
+	
+	//Calculation Constants
 	public static final double ROBOT_WHEEL_DIAMETER_INCHES = 6.0;
 	
-	private CANTalon right1, right2, left1, left2; 
-	private CANTalon shooterElevator;
-	private VictorSP shooterFlywheel;
-	private Servo helloKittyMotor;
-
-	private VictorSP intakeMotor; 
-	private CANTalon climber;
-	private boolean intaking;
-	private boolean outtaking;
-	private boolean helloKittyLeft;
-	private boolean helloKittyStarted;
-	private boolean seekingPeg;
-	private boolean encoderDebug;
+	//Speed/Angle Constants
+	public static final double SHOOTER_ELEVATOR_SPEED = 0.1;
+	public static final double HELLO_KITTY_LEFT_ANGLE = 60, HELLO_KITTY_RIGHT_ANGLE = 120;
 	
+	//=============== Instant Fields ===============
+	//Motors
+	private CANTalon rightFront, rightRear, leftFront, leftRear; //Drivetrain Motors
+	private CANTalon shooterElevator, shooterFlywheel; //Shooter Motors
+	private CANTalon intake; //Intake Motor
+	private CANTalon climber; //Climber Motor
+	private Servo helloKitty; //Fuel Regulator Servo
+	
+	//Sensors
 	private Encoder leftEncoder;
 	private Encoder rightEncoder;
 	
+	//Drivetrain
 	private RobotDrive driveTrain;
 	
+	//Controllers
 	private XboxController driveController, subSystemController;
+	
+	//=============== Robot Status ===============
+	private boolean isIntakeIntaking, isIntakeOuttaking; //Intake status
+	private boolean isHelloKittyLeft; //Fuel regulator servo on the left
+	private boolean isSeekingPeg; //Vision is active
+	private boolean isEncoderDebug; //Encoder print statements
 
 	@Override
 	public void robotInit() {
-		//Drive Train Controllers
-		right1 = new CANTalon(2);
-		right1.set(0);
-		right2 = new CANTalon(7);
-		right2.set(0);
-		left1 = new CANTalon(3);
-		left1.set(0);
-		left2 = new CANTalon(6);
-		left2.set(0);
+		//=============== Robot Status ===============
+		isIntakeIntaking = false;
+		isIntakeOuttaking = false;
+		isHelloKittyLeft = true;
+		isSeekingPeg = false;
+		isEncoderDebug = false;
 		
-		//Status Booleans
-		intaking = false;
-		outtaking = false;
-		helloKittyLeft = false;
-		helloKittyStarted = false;
-		seekingPeg = false;
-		encoderDebug = false;
-
-		driveTrain = new RobotDrive(left1, left2, right1, right2);
-
-		//driveTrain = new RobotDrive(left1, left2, right1, right2);
-
-
+		//=============== Motors ===============
+		//Drivetrain
+		rightFront = new CANTalon(RIGHT_FRONT_ID);
+		rightFront.set(0);
+		rightRear = new CANTalon(RIGHT_REAR_ID);
+		rightRear.set(0);
+		leftFront = new CANTalon(LEFT_FRONT_ID);
+		leftFront.set(0);
+		leftRear = new CANTalon(LEFT_REAR_ID);
+		leftRear.set(0);
 		
-		shooterElevator = new CANTalon(1);
+		driveTrain = new RobotDrive(leftFront, leftRear, rightFront, rightRear); //Initialize Drivetrain
+		
+		//Subsystem
+		shooterElevator = new CANTalon(SHOOTER_ELEVATOR_ID);
 		shooterElevator.set(0);
-		shooterFlywheel = new VictorSP(2);
+		shooterFlywheel = new CANTalon(SHOOTER_FLYWHEEL_ID);
 		shooterFlywheel.set(0);
 		
-		intakeMotor = new VictorSP(4);
-		intakeMotor.set(0);
-		intakeMotor.setInverted(true);
+		intake = new CANTalon(INTAKE_ID);
+		intake.set(0);
 		
-		climber = new CANTalon(8);
+		climber = new CANTalon(CLIMBER_ID);
 		climber.set(0);
 		
-		driveController = new XboxController(0);
-		subSystemController = new XboxController(1);
+		//=============== Controllers ===============
+		driveController = new XboxController(DRIVE_CONTROLLER_PORT);
+		subSystemController = new XboxController(SUBSYSTEM_CONTROLLER_PORT);
 		
-		helloKittyMotor = new Servo(3);
-		helloKittyMotor.setAngle(0);
+		helloKitty = new Servo(HELLO_KITTY_ID);
+		helloKitty.setAngle(HELLO_KITTY_LEFT_ANGLE); //Servo starts left
 		
 		//Encoder
-			//Right uses 0 & 1, left uses 2 & 3
-		rightEncoder = new Encoder(PORT_DIO_ENCODER_RIGHT, PORT_DIO_ENCODER_RIGHT+1, false, Encoder.EncodingType.k4X);
-		//leftEncoder = new Encoder(PORT_DIO_ENCODER_LEFT, PORT_DIO_ENCODER_LEFT+1, false, Encoder.EncodingType.k4X);
+		rightEncoder = new Encoder(ENCODER_RIGHT_ID, ENCODER_RIGHT_ID+1, false, Encoder.EncodingType.k4X);
+		leftEncoder = new Encoder(ENCODER_LEFT_ID, ENCODER_LEFT_ID+1, false, Encoder.EncodingType.k4X);
 		rightEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/360);
-		//leftEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/360);
+		leftEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/360);
 		
 		//Initialize Webcam
 	    UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
@@ -136,16 +156,17 @@ public class Robot extends IterativeRobot {
 	private static int IMG_HEIGHT = 240;
 	private VisionThread visionThread;
 	private final Object imgLock = new Object();
+	
 
-	@Override
+@Override
 	public void autonomousInit() {
 		
 	}
 
 	@Override
 	public void autonomousPeriodic() {
-		intaking = false;
-		outtaking = false;
+		isIntakeIntaking = false;
+		isIntakeOuttaking = false;
 	}
 
 	@Override
@@ -173,43 +194,43 @@ public class Robot extends IterativeRobot {
         	
         	//Intake
         	if (driveController.isButtonPressed(XboxController.START_BUTTON)) {
-        		if(intaking){
-        			intaking = false;
+        		if(isIntakeIntaking){
+        			isIntakeIntaking = false;
         		}
         		else{
-        			intaking = true;
+        			isIntakeIntaking = true;
         		}
-        		outtaking = false;
+        		isIntakeOuttaking = false;
         	}
         	if(driveController.isButtonPressed(XboxController.BACK_BUTTON)){
-        		if(outtaking){
-        			outtaking = false;
+        		if(isIntakeOuttaking){
+        			isIntakeOuttaking = false;
         		}
         		else{
-        			outtaking = true;
+        			isIntakeOuttaking = true;
         		}
-        		intaking = false;
+        		isIntakeIntaking = false;
         	}
         	//Vision & peg seeking
         	if (driveController.isButtonPressed(XboxController.X_BUTTON)) {
-        		if(seekingPeg){
+        		if(isSeekingPeg){
         			try{
         				visionThread.sleep(40);
         			}
         			catch(InterruptedException e){
         				
         			}
-        			seekingPeg = false;
+        			isSeekingPeg = false;
         		}
         	}
         	else{
+        		isSeekingPeg = true;
         		visionThread.interrupt();
-        		seekingPeg = true;
         	}
 //        		System.out.println("SeekingPeg: " + seekingPeg);
         	
 	
-        	if(this.boundingRectOutput.size() == 2 && seekingPeg){
+        	if(this.boundingRectOutput.size() == 2 && isSeekingPeg){
         		double centerX = (this.boundingRectOutput.get(0).x + this.boundingRectOutput.get(1).x)/2.0;
         		
         		//String turnDir = "TURN " + ((centerX<this.IMG_WIDTH/2.0) ? "LEFT; " : "RIGHT; ");
@@ -238,14 +259,14 @@ public class Robot extends IterativeRobot {
 //        		moveXFeet(2);
 //        	}
         	
-        	if (intaking) {
-        		intakeMotor.set(-1);
+        	if (isIntakeIntaking) {
+        		intake.set(-1);
         	}
-        	else if (outtaking) {
-        		intakeMotor.set(1);
+        	else if (isIntakeOuttaking) {
+        		intake.set(1);
         	}
         	else {
-        		intakeMotor.set(0);
+        		intake.set(0);
         	}
         	
         	if (subSystemController.getRawButton(XboxController.RB_BUTTON)) {
@@ -257,22 +278,22 @@ public class Robot extends IterativeRobot {
         
         	
         	if(subSystemController.isButtonPressed(XboxController.LB_BUTTON)){
-        		helloKittyLeft = !helloKittyLeft;
+        		isHelloKittyLeft = !isHelloKittyLeft;
         		
         	}
         	
-        	if(helloKittyLeft){
-        		helloKittyMotor.setAngle(60.0);
+        	if(isHelloKittyLeft){
+        		helloKitty.setAngle(60.0);
         	}
         	else{
-        		helloKittyMotor.setAngle(120.0);
+        		helloKitty.setAngle(120.0);
         		
         	}
         	
         	if(driveController.isButtonPressed(XboxController.RB_BUTTON)){
-        		encoderDebug = !encoderDebug;
+        		isEncoderDebug = !isEncoderDebug;
         	}
-        	if(encoderDebug){
+        	if(isEncoderDebug){
         		System.out.println("Encoder Debug: " + rightEncoder.getDistance());
         	}
         	
