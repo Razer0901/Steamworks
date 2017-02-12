@@ -119,8 +119,8 @@ public class Robot extends IterativeRobot {
 		//Encoder
 		rightEncoder = new Encoder(ENCODER_RIGHT_ID, ENCODER_RIGHT_ID+1, false, Encoder.EncodingType.k4X);
 		leftEncoder = new Encoder(ENCODER_LEFT_ID, ENCODER_LEFT_ID+1, false, Encoder.EncodingType.k4X);
-		rightEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/360);
-		leftEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/360);
+		rightEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/512);
+		leftEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/512);
 		
 		//Initialize Webcam
 	    UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
