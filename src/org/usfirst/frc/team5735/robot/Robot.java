@@ -16,6 +16,8 @@ import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Servo;
+import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Timer;
@@ -42,6 +44,7 @@ public class Robot extends IterativeRobot {
 	public static final int SHOOTER_ELEVATOR_ID = 5, SHOOTER_FLYWHEEL_ID = 6, INTAKE_ID = 7, CLIMBER_ID = 8; //Subsystem CAN IDs
 	public static final int ENCODER_RIGHT_ID = 0, ENCODER_LEFT_ID = 2; //Encoder DIO IDs
 	public static final int HELLO_KITTY_ID = 0; //Xbox Controller USB Ports
+	public static final int CAMERA_LED_ID = 1; //Camera Light Ring PWM Port
 	public static final int DRIVE_CONTROLLER_PORT = 0, SUBSYSTEM_CONTROLLER_PORT = 1; //Xbox Controller USB Ports
 	
 	//Calculation Constants
@@ -51,7 +54,7 @@ public class Robot extends IterativeRobot {
 	public static final double SHOOTER_ELEVATOR_SPEED = 0.1;
 	public static final double HELLO_KITTY_LEFT_ANGLE = 60, HELLO_KITTY_RIGHT_ANGLE = 120;
 	
-	//=============== Instant Fields ===============
+	//=============== Instance Fields ===============
 	//Motors
 	private CANTalon rightFront, rightRear, leftFront, leftRear; //Drivetrain Motors
 	private CANTalon shooterElevator, shooterFlywheel; //Shooter Motors
@@ -62,6 +65,7 @@ public class Robot extends IterativeRobot {
 	//Sensors
 	private Encoder leftEncoder;
 	private Encoder rightEncoder;
+	private AHRS gyro;
 	
 	//Drivetrain
 	private RobotDrive driveTrain;
@@ -121,6 +125,9 @@ public class Robot extends IterativeRobot {
 		leftEncoder = new Encoder(ENCODER_LEFT_ID, ENCODER_LEFT_ID+1, false, Encoder.EncodingType.k4X);
 		rightEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/512);
 		leftEncoder.setDistancePerPulse((Math.PI * ROBOT_WHEEL_DIAMETER_INCHES / 2)/512);
+		
+		//Gyro
+		gyro = new AHRS(SPI.Port.kMXP);
 		
 		//Initialize Webcam
 	    UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
@@ -294,6 +301,7 @@ public class Robot extends IterativeRobot {
         	if(isEncoderDebug){
         		System.out.println("Encoder Debug: " + rightEncoder.getDistance());
         	}
+        	System.out.println("Gyro Angle: " + gyro.getAngle());
         	
         	Timer.delay(0.05);
         }
